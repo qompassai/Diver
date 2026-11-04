@@ -1,0 +1,72 @@
+// qompassai/Diver/mcpservers.json5
+// Qompass AI MCP Servers Config
+// Copyright (C) 2025 Qompass AI, All rights reserved
+/////////////////////////////////////////////////////
+//
+// Estate MCP fleet registration (D-879, 2026-11-03). This replaces
+// the stale template that registered docker-based third-party
+// servers (github, google-maps, filesystem, tavily) and no estate
+// servers at all. Every entry below was verified against a deployed
+// binary on primo at its current released version before being
+// written here; paths are absolute so the registration does not
+// depend on the client's PATH.
+//
+// Era (D-113): estate servers are modern-era only (protocol
+// 2026-07-28). Clients must not send a legacy initialize; requests
+// carry per-request _meta (io.modelcontextprotocol/protocolVersion
+// etc.). A legacy initialize is refused with a typed -32022.
+//
+// NOT registered, deliberately: ardor, fathom, lumen, phaedrus and
+// the torogao server have no deployed binary on primo tonight, and
+// a configured-but-absent server is a defect, not a placeholder.
+// They join this file when their deployments land.
+
+{
+  "mcpServers": {
+    "atelier": {
+      "command": "/home/phaedrus/.local/share/pax/atelier/result/bin/atelier",
+      "args": []
+    },
+    "bloch": {
+      "command": "/home/phaedrus/.cargo/bin/bloch",
+      "args": ["serve"]
+    },
+    "eigenstyle": {
+      "command": "/home/phaedrus/.local/share/pax/mcpb-stage-1.0/eigenstyle/eigenstyle",
+      "args": []
+    },
+    "lupin": {
+      "command": "/home/phaedrus/.local/share/pax/mcpb-stage-1.0/lupin/lupin",
+      "args": []
+    },
+    "neemu": {
+      "command": "/home/phaedrus/.local/bin/neemu",
+      "args": []
+    },
+    "periscope": {
+      "command": "/home/phaedrus/.local/bin/periscope",
+      "args": []
+    },
+    "phlow": {
+      "command": "/home/phaedrus/.local/bin/phlow",
+      "args": ["serve"]
+    },
+    "seahawk": {
+      "command": "/home/phaedrus/.local/bin/seahawk",
+      "args": ["/home/phaedrus/.config/seahawk/seahawk.toml"]
+    },
+    "slipway": {
+      "command": "/home/phaedrus/.local/share/pax/mcpb-stage-1.0/slipway/slipway",
+      "args": ["--config", "/home/phaedrus/.local/share/pax/mcpb-stage-1.0/slipway/config.toml"]
+    },
+    "theodolite": {
+      "command": "/home/phaedrus/.local/bin/theodolite",
+      "args": ["--config", "/home/phaedrus/.local/share/theodolite/bridge.toml"]
+    },
+    "torori": {
+      "command": "/home/phaedrus/.local/bin/torori",
+      "args": []
+    }
+  },
+  "nativeMCPServers": []
+}

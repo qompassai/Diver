@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/rose/config.lua
 -- Resolved Rose configuration: defaults and validation (Tiger Style)
--- Copyright (C) 2025 Qompass AI, All rights reserved
--- ----------------------------------------
+---@module 'ai.rose.config'
 -- Port of rose.nvim's config resolver, trimmed to what the folded-in
 -- modules consume: trusted, workspace, rose, providers, agent, flow,
 -- mcp and checks. The speech/hub/webui/debug/diver/scip sections are
@@ -89,7 +88,7 @@ M.defaults = {
         max_tool_result = 24000,
         max_context = 120000,
     },
-    flow = { cmd = { 'flow', 'serve' }, timeout = 600000, bridge = true },
+    flow = { cmd = { 'phlow', 'serve' }, timeout = 600000, bridge = true },
     mcp = { servers = {} },
     checks = {},
 }
@@ -143,12 +142,86 @@ local function validate_checks(checks)
     end
 end
 
--- Bundled read-only LSP helpers as default MCP servers.
+-- Default MCP servers: the bundled read-only LSP helpers plus the
+-- deployed estate fleet (D-879, 2026-11-03). Estate servers are
+-- modern-era only (protocol 2026-07-28, D-113): they refuse a legacy
+-- initialize with a typed -32022. Every estate entry is gated to the
+-- read-only tools validated against the deployed build; write and
+-- execute tools are deliberately absent from allowtools, so Rose can
+-- never call them. Servers without a deployed binary on this machine
+-- (ardor, fathom, lumen, phaedrus, torogao) are not registered: a
+-- configured-but-absent server is a defect, not a placeholder.
 ---@param workspace string
 ---@return table<string, table>
 local function mcp_defaults(workspace)
     local config_home = vim.env.XDG_CONFIG_HOME or vim.fs.joinpath(vim.env.HOME, '.config')
+    local home = vim.env.HOME
     return {
+        -- Atelier 0.1.0 (pre-release, nix build in ~/.local/share/pax/atelier):
+        -- image generation server; only its read-only status tools are gated.
+        atelier = {
+            cmd = { vim.fs.joinpath(home, '.local/share/pax/atelier/result/bin/atelier') },
+            trusted = true,
+            readonly = true,
+            timeout = 60000,
+            allowtools = {
+                'atelier_models',
+                'atelier_status',
+            },
+        },
+        -- Bloch 0.4.1: fleet memory/tracker server; binds to the client
+        -- workspace (servers.lua spawns with cwd = workspace).
+        bloch = {
+            cmd = { vim.fs.joinpath(home, '.cargo/bin/bloch'), 'serve' },
+            trusted = true,
+            readonly = true,
+            timeout = 60000,
+            allowtools = {
+                'idea_lookup',
+                'lessons_search',
+                'memory_get',
+                'memory_search',
+                'roadmap_rollup',
+                'roadmap_state',
+                'tracker_rollup',
+                'tracker_state',
+            },
+        },
+        -- Eigenstyle 1.0.0 (mcpb bundle deployed under mcpb-stage-1.0):
+        -- voice-profile server; ingest and fingerprint writes stay ungated.
+        eigenstyle = {
+            cmd = { vim.fs.joinpath(home, '.local/share/pax/mcpb-stage-1.0/eigenstyle/eigenstyle') },
+            trusted = true,
+            readonly = true,
+            timeout = 60000,
+            allowtools = {
+                'check_draft',
+                'get_exemplars',
+                'get_profile',
+                'list_corpus',
+            },
+        },
+        -- Lupin 1.0.0: opportunity ledger; the submit tool stays ungated.
+        lupin = {
+            cmd = { vim.fs.joinpath(home, '.local/share/pax/mcpb-stage-1.0/lupin/lupin') },
+            trusted = true,
+            readonly = true,
+            timeout = 60000,
+            allowtools = {
+                'capability_list',
+                'capability_match',
+                'opportunity_get',
+                'opportunity_list',
+                'pipeline_summary',
+            },
+        },
+        -- mcpls 0.7.0: the allowtools below were corrected 2026-11-03
+        -- (D-879) to the tool names the deployed server actually
+        -- serves (get_*/workspace_symbol_search); the previous lsp_*
+        -- names matched nothing, so every call would have been
+        -- refused by the servers.lua allowlist even with the server
+        -- running. Write-shaped tools (format_*, rename_symbol,
+        -- restart_server) stay ungated.
         mcpls = {
             cmd = {
                 'mcpls',
@@ -159,15 +232,15 @@ local function mcp_defaults(workspace)
             readonly = true,
             timeout = 60000,
             allowtools = {
-                'lsp_hover',
-                'lsp_definition',
-                'lsp_references',
-                'lsp_diagnostics',
-                'lsp_document_symbols',
-                'lsp_workspace_symbols',
-                'lsp_completion',
-                'lsp_signature_help',
-                'lsp_inlay_hints',
+                'get_completions',
+                'get_definition',
+                'get_diagnostics',
+                'get_document_symbols',
+                'get_hover',
+                'get_inlay_hints',
+                'get_references',
+                'get_signature_help',
+                'workspace_symbol_search',
             },
         },
         mcp_rust = {
@@ -186,6 +259,51 @@ local function mcp_defaults(workspace)
                 'references',
                 'diagnostics',
                 'hover',
+            },
+        },
+        -- Neemu 1.0.0: media-ingest RE server. Its read tools require a
+        -- registered work id; extraction/ingest tools stay ungated.
+        neemu = {
+            cmd = { vim.fs.joinpath(home, '.local/bin/neemu') },
+            trusted = true,
+            readonly = true,
+            timeout = 60000,
+            allowtools = {
+                'neemu_list_records',
+                'neemu_segment_scene',
+            },
+        },
+        -- Periscope 1.0.0: broker into the live editor. run_format writes
+        -- files and run_lint executes linters, so both stay ungated, as do
+        -- the attention mutators.
+        periscope = {
+            cmd = { vim.fs.joinpath(home, '.local/bin/periscope') },
+            trusted = true,
+            readonly = true,
+            timeout = 60000,
+            allowtools = {
+                'broker_status',
+                'get_definition',
+                'get_diagnostics',
+                'get_document_symbols',
+                'get_hover',
+                'get_references',
+                'list_dap',
+                'list_formatters',
+                'list_linters',
+                'list_servers',
+            },
+        },
+        -- Phlow (server name "flow"): the agent runtime's own MCP face.
+        -- flow_run executes tasks and flow_check runs configured checks,
+        -- so only the status tool is gated here.
+        phlow = {
+            cmd = { vim.fs.joinpath(home, '.local/bin/phlow'), 'serve' },
+            trusted = true,
+            readonly = true,
+            timeout = 60000,
+            allowtools = {
+                'flow_status',
             },
         },
         -- Salesforce DX, read-only: SOQL queries, org listing, username
@@ -217,6 +335,96 @@ local function mcp_defaults(workspace)
                 'get_username',
                 'list_all_orgs',
                 'run_soql_query',
+            },
+        },
+        -- Seahawk 1.0.0: Unreal MCP broker (lab-only, token auth inside
+        -- its own config file, never copied here). Only the read-only
+        -- status/surface/oplog tools are gated; the gui.* and execute
+        -- surface stays ungated.
+        seahawk = {
+            cmd = {
+                vim.fs.joinpath(home, '.local/bin/seahawk'),
+                vim.fs.joinpath(config_home, 'seahawk', 'seahawk.toml'),
+            },
+            trusted = true,
+            readonly = true,
+            timeout = 60000,
+            allowtools = {
+                'seahawk_oplog',
+                'seahawk_status',
+                'seahawk_surface',
+            },
+        },
+        -- Slipway 1.0.0 (mcpb bundle deployed under mcpb-stage-1.0,
+        -- invoked with the bundle's own config, per its manifest):
+        -- Android release server; build/sign/release tools stay ungated.
+        slipway = {
+            cmd = {
+                vim.fs.joinpath(home, '.local/share/pax/mcpb-stage-1.0/slipway/slipway'),
+                '--config',
+                vim.fs.joinpath(home, '.local/share/pax/mcpb-stage-1.0/slipway/config.toml'),
+            },
+            trusted = true,
+            readonly = true,
+            timeout = 60000,
+            allowtools = {
+                'slipway_bundle_check',
+                'slipway_inspect',
+                'slipway_release_check',
+                'slipway_status',
+                'slipway_toolchain',
+                'slipway_verify',
+            },
+        },
+        -- Theodolite 0.2.2: headless LSP bridge; read-only by design.
+        -- The bridge config pins rust-analyzer (deployed 2026-11-03,
+        -- ~/.local/share/theodolite/bridge.toml). session_restart
+        -- mutates session state and stays ungated. First calls start
+        -- the pinned language server, hence the longer timeout.
+        theodolite = {
+            cmd = {
+                vim.fs.joinpath(home, '.local/bin/theodolite'),
+                '--config',
+                vim.fs.joinpath(home, '.local/share/theodolite/bridge.toml'),
+            },
+            trusted = true,
+            readonly = true,
+            timeout = 120000,
+            allowtools = {
+                'code_actions',
+                'declaration',
+                'definition',
+                'diagnostics',
+                'document_symbols',
+                'hover',
+                'implementation',
+                'references',
+                'rename_preview',
+                'session_status',
+                'type_definition',
+                'workspace_symbols',
+            },
+        },
+        -- Torori 1.0.0: voice/SFX asset server; fetch, ingest, generate
+        -- and render tools stay ungated.
+        torori = {
+            cmd = { vim.fs.joinpath(home, '.local/bin/torori') },
+            trusted = true,
+            readonly = true,
+            timeout = 60000,
+            allowtools = {
+                'torori_bundle_list',
+                'torori_bundle_validate',
+                'torori_catalogue_get',
+                'torori_catalogue_search',
+                'torori_catalogue_stats',
+                'torori_library_manifest',
+                'torori_library_search',
+                'torori_pair_list',
+                'torori_pair_validate',
+                'torori_status',
+                'torori_voice_list',
+                'torori_voice_qc',
             },
         },
     }
