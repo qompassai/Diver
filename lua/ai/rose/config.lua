@@ -157,18 +157,6 @@ local function mcp_defaults(workspace)
     local config_home = vim.env.XDG_CONFIG_HOME or vim.fs.joinpath(vim.env.HOME, '.config')
     local home = vim.env.HOME
     return {
-        -- Atelier 0.1.0 (pre-release, nix build in ~/.local/share/pax/atelier):
-        -- image generation server; only its read-only status tools are gated.
-        atelier = {
-            cmd = { vim.fs.joinpath(home, '.local/share/pax/atelier/result/bin/atelier') },
-            trusted = true,
-            readonly = true,
-            timeout = 60000,
-            allowtools = {
-                'atelier_models',
-                'atelier_status',
-            },
-        },
         -- Bloch 0.4.1: fleet memory/tracker server; binds to the client
         -- workspace (servers.lua spawns with cwd = workspace).
         bloch = {
@@ -213,6 +201,25 @@ local function mcp_defaults(workspace)
                 'opportunity_get',
                 'opportunity_list',
                 'pipeline_summary',
+            },
+        },
+        -- Lumen 2.0.0 (~/.local/bin/lumen; built from lumen main
+        -- bd190450 + D-1041): conversion factory + the generation lane
+        -- folded in (D-143) and renamed to lumen terminology (D-1041).
+        -- Read-only status tools plus the two generation tools
+        -- (lumen_txt2img, lumen_img2img) gated here per D-1057
+        -- (2026-11-06); the standalone atelier registration was
+        -- retired 2026-11-05 (D-1009).
+        lumen = {
+            cmd = { vim.fs.joinpath(home, '.local/bin/lumen') },
+            trusted = true,
+            readonly = true,
+            timeout = 60000,
+            allowtools = {
+                'lumen_img2img',
+                'lumen_models',
+                'lumen_status',
+                'lumen_txt2img',
             },
         },
         -- mcpls 0.7.0: the allowtools below were corrected 2026-11-03
@@ -264,7 +271,7 @@ local function mcp_defaults(workspace)
         -- Neemu 1.0.0: media-ingest RE server. Its read tools require a
         -- registered work id; extraction/ingest tools stay ungated.
         neemu = {
-            cmd = { vim.fs.joinpath(home, '.local/bin/neemu') },
+            cmd = { vim.fs.joinpath(home, '.local/bin/neemu'), '--profile', 'image' },
             trusted = true,
             readonly = true,
             timeout = 60000,
@@ -408,7 +415,7 @@ local function mcp_defaults(workspace)
         -- Torori 1.0.0: voice/SFX asset server; fetch, ingest, generate
         -- and render tools stay ungated.
         torori = {
-            cmd = { vim.fs.joinpath(home, '.local/bin/torori') },
+            cmd = { vim.fs.joinpath(home, '.local/bin/torori'), '--profile', 'bundles,library,voice' },
             trusted = true,
             readonly = true,
             timeout = 60000,
