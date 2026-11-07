@@ -77,7 +77,7 @@ local function vet_tools(server_name, tools)
     assert(type(tools) == 'table')
     -- Lazy require: ai.security is optional; a missing vet module must not
     -- break tool listing.
-    local ok, vet_mod = pcall(require, 'ai.security.mcp_vet')
+    local ok, vet_mod = pcall(require, 'security.mcp_vet')
     if not ok or type(vet_mod) ~= 'table' or type(vet_mod.vet_tool_metadata) ~= 'function' then
         return nil
     end
@@ -224,7 +224,7 @@ end
 ---@param args table
 ---@param on_decision fun(allowed: boolean, reason: string)
 local function confirm_with_policy(server_name, tool_name, args, on_decision)
-    local ok, security = pcall(require, 'ai.security')
+    local ok, security = pcall(require, 'security')
     if ok and type(security) == 'table' and type(security.confirm_tool_call) == 'function' then
         local confirm = security.confirm_tool_call
         local sok, call_err = pcall(confirm, server_name, tool_name, args, on_decision, server_identity(server_name))

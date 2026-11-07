@@ -36,7 +36,7 @@ local function load_security()
     if M._force_unavailable then
         return nil
     end
-    local ok, mod = pcall(require, 'ai.security')
+    local ok, mod = pcall(require, 'security')
     if not ok or type(mod) ~= 'table' then
         return nil
     end

@@ -188,7 +188,7 @@ end
 ---@param callback fun(results: A2aOrchestratedResult[])
 ---@param start fun(norm: A2aOrchestrateNorm, callback: fun(results: A2aOrchestratedResult[]))
 local function request_dispatch(norm, callback, start)
-    local ok, sec = pcall(require, 'ai.security')
+    local ok, sec = pcall(require, 'security')
     if not ok or sec == nil or type(sec.confirm_tool_call) ~= 'function' then
         if not security_logged then
             security_logged = true

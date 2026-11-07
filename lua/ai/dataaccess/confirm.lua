@@ -387,7 +387,7 @@ function M.prompt(token, label, text_preview, callback)
         end
         return
     end
-    local ok, security = pcall(require, 'ai.security')
+    local ok, security = pcall(require, 'security')
     if not ok or type(security) ~= 'table' or type(security.confirm_tool_call) ~= 'function' then
         entry.denied = true
         callback(false, 'security subsystem unavailable: write denied (fail closed)')
