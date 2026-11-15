@@ -16,26 +16,23 @@ return ---@type vim.lsp.Config
     },
     settings = {
         ['nil'] = {
+            diagnostics = {
+                excludedFiles = {},
+                ignored = {},
+            },
             formatting = {
                 command = {
                     'alejandra',
                 },
             },
-            diagnostics = {
-                enabled = true,
-                ignored = {},
-                excludedFiles = {},
-            },
             nix = {
-                autoArchive = true,
-                autoEvalInputs = true,
                 binary = 'nix',
                 flake = {
                     autoArchive = true,
                     autoEvalInputs = true,
+                    nixpkgsInputName = 'nixpkgs',
                 },
                 maxMemoryMB = 2560,
-                nixpkgsInputName = 'nixpkgs',
             },
         },
     },
