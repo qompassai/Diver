@@ -21,6 +21,7 @@ M.tic80 = safe_require('games.tic80')
 M.unity = safe_require('games.unity')
 M.unreal = safe_require('games.unreal')
 M.voidsprite = safe_require('games.voidsprite')
+M.wasm4 = safe_require('games.wasm4')
 
 local engines = {
     {
@@ -63,6 +64,10 @@ local engines = {
         key = 'voidsprite',
         label = 'Voidsprite',
     },
+    {
+        key = 'wasm4',
+        label = 'WASM-4',
+    },
 }
 
 function M.setup()
@@ -77,14 +82,14 @@ function M.setup()
         M.show_menu()
     end, {
         desc = 'Open a combined Aseprite/Blender/Godot/LÖVE2D/Redot/Robocode/TIC-80/Unity/Unreal/'
-            .. 'Voidsprite action menu',
+            .. 'Voidsprite/WASM-4 action menu',
     })
 
     vim.api.nvim_create_user_command('GamesDoctor', function()
         vim.cmd('checkhealth games')
     end, {
         desc = "Report every engine's resolved binary/root (Aseprite/Blender/Godot/LÖVE2D/Redot/"
-            .. 'Robocode/TIC-80/Unity/Unreal/Voidsprite)',
+            .. 'Robocode/TIC-80/Unity/Unreal/Voidsprite/WASM-4)',
     })
 
     vim.keymap.set('n', '<Space>gd', function()
@@ -124,6 +129,7 @@ function M.show_menu()
             'Unity',
             'Unreal',
             'Voidsprite',
+            'WASM-4',
         },
         prompt = 'Select a games action:',
     })
