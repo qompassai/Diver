@@ -5,6 +5,7 @@ local M = {}
 
 local api = vim.api
 local diagnostic = vim.diagnostic
+local git = require('utils.git')
 local lsp = vim.lsp
 
 local branch_cache = {
@@ -27,7 +28,7 @@ local function git_branch()
     if branch_cache.cwd == cwd and (now - branch_cache.at) < BRANCH_TTL_MS then
         return branch_cache.branch
     end
-    local out = vim.fn.systemlist('git branch --show-current 2>/dev/null')
+    local out = git.lines({ 'branch', '--show-current' })
     local branch = (out[1] or ''):gsub('%s+', '')
     branch_cache = {
         cwd = cwd,
@@ -47,7 +48,7 @@ local function git_changes()
     local added = 0
     local changed = 0
     local removed = 0
-    for _, line in ipairs(vim.fn.systemlist('git diff --numstat HEAD 2>/dev/null')) do
+    for _, line in ipairs(git.lines({ 'diff', '--numstat', 'HEAD' })) do
         local add_count, del_count = line:match('^(%d+)%s+(%d+)%s+')
         if add_count ~= nil and del_count ~= nil then
             local added_lines = tonumber(add_count)
