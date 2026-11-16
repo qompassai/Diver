@@ -24,8 +24,24 @@ return ---@type vim.lint.Config
             return {}
         end
         local decoded = decoded_raw ---@type vim.lint.Config.ReportItem[]
+        -- deadnix >= 1.0 wraps findings: { file = ..., results = { ... } };
+        -- older releases emitted the findings array at the top level.
+        local items = decoded
+        if type(decoded) == 'table' and type(decoded.results) == 'table' then
+            items = {}
+            for _, result in ipairs(decoded.results) do
+                items[#items + 1] = {
+                    column = result.column,
+                    endColumn = result.endColumn,
+                    kind = result.kind,
+                    line = result.line,
+                    message = result.message,
+                    path = decoded.file,
+                }
+            end
+        end
         local diagnostics = {}
-        for _, item in ipairs(decoded) do
+        for _, item in ipairs(items) do
             if item.path and item.line and item.column then
                 local bufname = vim.api.nvim_buf_get_name(bufnr)
                 if vim.fs.basename(item.path) == vim.fs.basename(bufname) or item.path == bufname then
@@ -34,7 +50,7 @@ return ---@type vim.lint.Config
                     diagnostics[#diagnostics + 1] = {
                         code = item.kind,
                         col = col,
-                        end_col = col + 1,
+                        end_col = item.endColumn ~= nil and (item.endColumn - 1) or (col + 1),
                         end_lnum = lnum,
                         lnum = lnum,
                         message = item.message or 'dead code detected',

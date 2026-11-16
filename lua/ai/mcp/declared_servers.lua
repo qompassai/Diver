@@ -1,7 +1,6 @@
 -- /qompassai/Diver/lua/ai/mcp/declared_servers.lua
 -- Qompass AI Declared MCP Servers (Tiger Style)
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
+---@module 'ai.mcp.declared_servers'
 --
 -- Version-controlled MCP server declarations. This file is the source of
 -- truth for the fleet: it travels with the config, diffs in review, and
@@ -20,6 +19,24 @@
 
 return {
     {
+        name = 'bloch',
+        command = '/home/phaedrus/.cargo/bin/bloch',
+        args = { 'serve' },
+        enabled = true,
+    },
+    {
+        name = 'broadside',
+        command = '/home/phaedrus/.cargo/bin/broadside-mcp',
+        args = {},
+        enabled = true,
+    },
+    {
+        name = 'eigenstyle',
+        command = '/home/phaedrus/.local/share/pax/mcpb-stage-1.0/eigenstyle/eigenstyle',
+        args = {},
+        enabled = true,
+    },
+    {
         name = 'git',
         command = '/usr/bin/uvx',
         args = { 'mcp-server-git@2026.10.10' },
@@ -32,19 +49,20 @@ return {
         enabled = true,
     },
     {
-        -- GUI-bridge mode (bethington/ghidra-mcp, installed): the bridge
-        -- is a stdio MCP server that multiplexes to the GhidraMCP plugin
-        -- inside a RUNNING Ghidra GUI (plugin HTTP on 127.0.0.1:8089 by
-        -- default; GHIDRA_MCP_URL overrides). Bridge and plugin zip
-        -- (/opt/ghidra/Extensions/Ghidra/GhidraMCP-6.0.0.zip) are already
-        -- installed, and the bridge answers initialize/tools-list without
-        -- the GUI -- but the 200+ proxied analysis tools need the plugin
-        -- enabled in Ghidra with a program open. Headless analysis
-        -- without the GUI is a different mode and lives in
-        -- security.ghidra (:GhidraAnalyze).
-        name = 'ghidra',
-        command = '/usr/bin/bridge-mcp-ghidra',
-        args = { '--transport', 'stdio' },
+        -- Fathom (Matt's own clean-room reverse-engineering MCP,
+        -- Rust, estate-built): takes the RE seat from REA under
+        -- D-1361 (2026-11-11). REA is third-party code whose
+        -- modern surface does not implement `ping` -- a true-positive
+        -- conformance FAIL of record 2026-11-11, no estate-side fix.
+        -- D-1361: --profile full is pinned deliberately (the D-954
+        -- pattern, as on seahawk below). This seat is the specialist
+        -- RE route; since the D-910 diet landed under D-1355, a
+        -- selector-less launch serves the core profile only (8
+        -- tools). The full catalog is 192 tools at the D-1355
+        -- census. No credentials required.
+        name = 'fathom',
+        command = '/home/phaedrus/.GH/Qompass/fathom/target/release/fathom',
+        args = { 'serve', '--profile', 'full' },
         enabled = true,
     },
     {
@@ -58,6 +76,45 @@ return {
         secrets = {
             GITHUB_PERSONAL_ACCESS_TOKEN = { provider = 'pass', path = 'gh/pat' },
         },
+        enabled = true,
+    },
+    {
+        name = 'lumen',
+        command = '/home/phaedrus/.local/bin/lumen',
+        args = {},
+        enabled = true,
+    },
+    {
+        name = 'lupin',
+        command = '/home/phaedrus/.local/share/pax/mcpb-stage-1.0/lupin/lupin',
+        args = {},
+        enabled = true,
+    },
+    {
+        -- NVIDIA CUDA docs (first-party CUDA documentation and code
+        -- examples), hosted by NVIDIA as a streamable-HTTP MCP server.
+        -- This config's MCP client is stdio-only, so the declaration
+        -- bridges through mcp-remote (pinned, never @latest): it proxies
+        -- stdio to the HTTPS endpoint and owns the OAuth flow, with
+        -- tokens stored under ~/.mcp-auth. The first connection needs
+        -- an interactive NVIDIA Developer sign-in that cannot fit the
+        -- client's 15-second initialize window, so prime it once from
+        -- a terminal with this same argv and complete the sign-in in
+        -- the browser; later starts reuse the stored tokens. No
+        -- credentials are stored here.
+        name = 'nvidia-cuda-docs',
+        command = '/usr/bin/npx',
+        args = {
+            '-y',
+            'mcp-remote@0.14.3',
+            'https://api.copilot.nsight.ngc.nvidia.com/mcp/cuda-docs',
+        },
+        enabled = true,
+    },
+    {
+        name = 'phaedrus',
+        command = '/home/phaedrus/.cargo/bin/phaedrus',
+        args = {},
         enabled = true,
     },
     {
@@ -85,17 +142,39 @@ return {
         enabled = true,
     },
     {
-        -- REA (Reverse Engineer Anything, morluto/rea; Matt's fork
-        -- qompassai/rea) v6.3.0, pinned: installed in user space with
-        -- npm --prefix ~/.local, never @latest; `rea mcp` serves stdio.
-        -- The 139-tool catalog spans native analysis (Ghidra/IDA/Hopper
-        -- providers), JavaScript/Electron, managed code, and web
-        -- observation, and sits behind the harness policy gate like
-        -- every other declared server. No credentials required.
-        name = 'rea',
-        command = '/home/phaedrus/.local/bin/rea',
-        args = { 'mcp' },
-        env = { GHIDRA_INSTALL_DIR = '/opt/ghidra' },
+        -- Seahawk (Matt's own broker, named 2026-10-27): born-modern
+        -- rmcp broker for Unreal Engine 5.8's built-in MCP server --
+        -- token auth, curated tool surface, execute-class default-deny
+        -- via decide(), append-only op log. The sole argument is its
+        -- config file, which also carries the acquisition lane's
+        -- enablement and caps. No credentials required here.
+        name = 'seahawk',
+        command = '/home/phaedrus/.local/bin/seahawk',
+        -- D-954 (2026-11-04): --profile full is pinned deliberately.
+        -- This harness is the whole-surface agent route (Unreal GUI
+        -- ladder = vision/gui, brokered downstream = broker,
+        -- code.feedback = feedback, doujin acquisition = acquire);
+        -- per-call harness policy + seahawk decide() still gate every
+        -- call. A selector-less launch now serves core only.
+        args = { '/home/phaedrus/.config/seahawk/seahawk.toml', '--profile', 'full' },
+        enabled = true,
+    },
+    {
+        name = 'slipway',
+        command = '/home/phaedrus/.local/share/pax/mcpb-stage-1.0/slipway/slipway',
+        args = { '--config', '/home/phaedrus/.local/share/pax/mcpb-stage-1.0/slipway/config.toml' },
+        enabled = true,
+    },
+    {
+        name = 'theodolite',
+        command = '/home/phaedrus/.local/bin/theodolite',
+        args = { '--config', '/home/phaedrus/.local/share/theodolite/bridge.toml' },
+        enabled = true,
+    },
+    {
+        name = 'vongola',
+        command = '/home/phaedrus/.local/bin/vongola-mcp',
+        args = {},
         enabled = true,
     },
 }
