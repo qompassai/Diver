@@ -13,10 +13,10 @@
 --   lsp:        loadable lsp/*_ls.lua files with a filetypes table
 --               (357 files, 351 loaded, 6 skipped)
 --   dap:        filetype catalog (MODULES) in lua/dap/init.lua
---               (23 entries)
+--               (24 entries)
 --   bsp:        require('dev.bsp.servers').filetypes()
 --   browser:    lua/dev/browser (bidi+cdp) asserted JS/TS set
--- Union filetypes: 449
+-- Union filetypes: 450
 
 ---@module 'config.lang.coverage'
 --- Language tooling coverage: what Diver can do for each filetype.
@@ -1253,7 +1253,15 @@ local M = {
     ['go'] = {
         formatters = { 'gofmt', 'gofumpt', 'goimports' },
         linters = { 'fieldalignment', 'golangcilint', 'staticcheck' },
-        lsp = { 'astgrep_ls', 'codebook_ls', 'gitlabduo_ls', 'golangcilint_ls', 'gop_ls', 'harper_ls' },
+        lsp = {
+            'astgrep_ls',
+            'codebook_ls',
+            'gitlabduo_ls',
+            'golangcilint_ls',
+            'gop_ls',
+            'harper_ls',
+            'snyk_ls',
+        },
         dap = { 'go' },
         bsp = true,
         browser = false,
@@ -1277,7 +1285,7 @@ local M = {
     ['gomod'] = {
         formatters = {},
         linters = {},
-        lsp = { 'golangcilint_ls', 'gop_ls' },
+        lsp = { 'golangcilint_ls', 'gop_ls', 'snyk_ls' },
         dap = {},
         bsp = false,
         browser = false,
@@ -1413,7 +1421,7 @@ local M = {
     ['helm'] = {
         formatters = {},
         linters = {},
-        lsp = { 'helm_ls' },
+        lsp = { 'helm_ls', 'snyk_ls' },
         dap = {},
         bsp = false,
         browser = false,
@@ -1661,6 +1669,7 @@ local M = {
             'lwc_ls',
             'oxlint_ls',
             'quicklintjs_ls',
+            'snyk_ls',
             'symfony_ls',
             'tailwindcss_ls',
             'ts_ls',
@@ -1762,6 +1771,7 @@ local M = {
             'gitlabduo_ls',
             'json_ls',
             'nx_ls',
+            'snyk_ls',
             'symfony_ls',
         },
         dap = {},
@@ -2230,7 +2240,7 @@ local M = {
     ['nix'] = {
         formatters = { 'alejandra', 'nixfmt', 'nixpkgs_fmt' },
         linters = { 'deadnix', 'statix' },
-        lsp = { 'astgrep_ls', 'harper_ls', 'nil_ls', 'nixd_ls', 'rnix_ls', 'statix_ls', 'ttags_ls' },
+        lsp = { 'astgrep_ls', 'harper_ls', 'nil_ls', 'nixd_ls', 'rnix_ls', 'ttags_ls' },
         dap = { 'nix' },
         bsp = false,
         browser = false,
@@ -2697,6 +2707,7 @@ local M = {
             'jedi_ls',
             'pyrefly_ls',
             'ruff_ls',
+            'snyk_ls',
             'tvmffinav_ls',
             'ty_ls',
             'zuban_ls',
@@ -2789,6 +2800,14 @@ local M = {
         formatters = { 'opa_fmt' },
         linters = { 'opa_checks', 'regal' },
         lsp = { 'regal_ls', 'rego_ls' },
+        dap = {},
+        bsp = false,
+        browser = false,
+    },
+    ['requirements'] = {
+        formatters = {},
+        linters = {},
+        lsp = { 'snyk_ls' },
         dap = {},
         bsp = false,
         browser = false,
@@ -2923,7 +2942,7 @@ local M = {
         browser = false,
     },
     ['rust'] = {
-        formatters = { 'rustfmt' },
+        formatters = { 'leptosfmt', 'rustfmt' },
         linters = { 'clippy' },
         lsp = {
             'astgrep_ls',
@@ -3320,7 +3339,7 @@ local M = {
     ['terraform'] = {
         formatters = { 'terraform_fmt', 'tofu_fmt' },
         linters = { 'kics', 'tflint' },
-        lsp = { 'terraform_ls', 'tofu_ls' },
+        lsp = { 'snyk_ls', 'terraform_ls', 'tofu_ls' },
         dap = {},
         bsp = false,
         browser = false,
@@ -3328,7 +3347,7 @@ local M = {
     ['terraform-vars'] = {
         formatters = { 'terraform_fmt', 'tofu_fmt' },
         linters = { 'tflint' },
-        lsp = { 'terraform_ls' },
+        lsp = { 'snyk_ls', 'terraform_ls' },
         dap = {},
         bsp = false,
         browser = false,
@@ -3435,6 +3454,7 @@ local M = {
             'lwc_ls',
             'oxlint_ls',
             'quicklintjs_ls',
+            'snyk_ls',
             'symfony_ls',
             'tailwindcss_ls',
             'ts_ls',
@@ -3763,6 +3783,7 @@ local M = {
             'homeassist_ls',
             'hydra_ls',
             'nobl9_ls',
+            'snyk_ls',
             'symfony_ls',
             'yaml_ls',
             'zizmor_ls',

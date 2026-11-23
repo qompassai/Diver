@@ -1,8 +1,5 @@
 -- /qompassai/Diver/lua/config/lsp.lua
 -- Qompass AI Diver LSP Bootstrap
--- Copyright (C) 2026 Qompass AI, All rights reserved
--- --------------------------------------------------
----
 --- LSP server enable bootstrap. The server configs live in lsp/<name>_ls.lua
 --- (Neovim 0.11+ native). This module enables them on first FileType,
 --- one by one so a single broken config cannot block the rest.
@@ -261,6 +258,7 @@ local servers = {
     'slangd_ls', ---lsp/linter
     'slint_ls',
     'smithy_ls',
+    'snyk_ls',
     'solang_ls',
     'solargraph_ls',
     'solc_ls',
@@ -274,7 +272,6 @@ local servers = {
     'standardrb_ls',
     'starlark_ls',
     -- 'starp_ls',
-    'statix_ls',
     'steep_ls',
     --'stimulus_ls', ---:TODO validate/come back to
     -- 'stylable_ls', ---:TODO https://github.com/wix/stylable/tree/master/packages/language-service
@@ -328,7 +325,7 @@ local servers = {
     -- 'verible_ls', ---TODO: install/validate ---@source  https://github.com/chipsalliance/verible
     'veridian_ls',
     'veryl_ls',
-    --'visualforce_ls', ---TODO: install/validate ---@source https://github.com/forcedotcom/salesforcedx-vscode
+    'visualforce_ls', ---@source https://github.com/forcedotcom/salesforcedx-vscode
     'vim_ls', ---TODO: validate ---@source https://github.com/iamcco/vim-language-server
     --'vts_ls', ---:TODO dx
     'vue_ls', ---:TODO validate ---@source  https://github.com/vuejs/language-tools/tree/master/packages/language-server
