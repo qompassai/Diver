@@ -16,7 +16,7 @@
 --               (23 entries)
 --   bsp:        require('dev.bsp.servers').filetypes()
 --   browser:    lua/dev/browser (bidi+cdp) asserted JS/TS set
--- Union filetypes: 448
+-- Union filetypes: 449
 
 ---@module 'config.lang.coverage'
 --- Language tooling coverage: what Diver can do for each filetype.
@@ -3505,6 +3505,14 @@ local M = {
         formatters = { 'typstfmt', 'typstyle' },
         linters = {},
         lsp = { 'harper_ls', 'ltexplus_ls', 'tinymist_ls' },
+        dap = {},
+        bsp = false,
+        browser = false,
+    },
+    ['tyranoscript'] = {
+        formatters = {},
+        linters = {},
+        lsp = { 'tyranoscript_ls' },
         dap = {},
         bsp = false,
         browser = false,

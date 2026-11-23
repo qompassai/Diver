@@ -274,6 +274,13 @@ do
     val_check(in_order, ('manifest keys sorted in file order (%d keys)'):format(#ordered))
 end
 
+local tyranoscript_ok, tyranoscript_detail = entry_matches('tyranoscript')
+local tyranoscript_servers = lsp_by_ft.tyranoscript or {}
+val_check(
+    tyranoscript_ok and #tyranoscript_servers == 1 and tyranoscript_servers[1] == 'tyranoscript_ls',
+    'TyranoScript coverage lists tyranoscript_ls (' .. tyranoscript_detail .. ')'
+)
+
 emit(string.format('RESULT: %d passed, %d failed', val_passed, val_failed))
 local fh = assert(io.open(report_path, 'w'))
 fh:write(table.concat(log_lines, '\n') .. '\n')

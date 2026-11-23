@@ -166,6 +166,18 @@ do
     adv_check(#references_lang_module('ada') == 0, 'purged stub ada has no remaining references')
 end
 
+do
+    local raw = fixture_raw()
+    raw.lsp.tyranoscript = { 'tyranoscript_ls' }
+    local manifest = gen.build(raw)
+    manifest.tyranoscript = nil
+    local ok, missing = gen.verify(manifest, raw)
+    adv_check(
+        not ok and #missing == 1 and missing[1]:find('tyranoscript', 1, true) ~= nil,
+        'verify rejects a manifest missing the TyranoScript LSP filetype'
+    )
+end
+
 emit(string.format('RESULT: %d passed, %d failed', adv_passed, adv_failed))
 local fh = assert(io.open(report_path, 'w'))
 fh:write(table.concat(log_lines, '\n') .. '\n')

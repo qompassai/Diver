@@ -81,6 +81,7 @@ local definitions = {
         js = 'javascript',
         jsonld = 'jsonld',
         jsx = 'javascriptreact',
+        ks = 'tyranoscript',
         kts = 'kotlin',
         labels = 'xml',
         ['lagda.md'] = 'agda',

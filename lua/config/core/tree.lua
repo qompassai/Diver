@@ -177,6 +177,7 @@ local parsers = {
     'turtle',
     'tsx',
     'typescript',
+    'tyranoscript',
     'typst',
     'udev',
     'usd',
@@ -197,6 +198,20 @@ local parsers = {
     'ziggy_schema',
     'zsh',
 }
+
+api.nvim_create_autocmd('User', {
+    pattern = 'TSUpdate',
+    callback = function()
+        require('nvim-treesitter.parsers').tyranoscript = {
+            install_info = {
+                queries = 'queries',
+                -- Pinned void2610 grammar commit.
+                revision = '58aeff5620fbb8f1a2f7b9bd8534d8f29db210c6',
+                url = 'https://github.com/void2610/tree-sitter-tyranoscript',
+            },
+        }
+    end,
+})
 
 local BUFFER_BYTES_MAX = 2 * 1024 * 1024
 local CAPTURES_MAX = 20000

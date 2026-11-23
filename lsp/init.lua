@@ -312,6 +312,7 @@ local servers = {
     'typeprof_ls',
     --'typos_ls', ---:TODO validate
     --'typst_ls', ---TODO: validate ---@source https://github.com/nvarner/typst-lsp
+    'tyranoscript_ls', ---:TODO validate ---@source https://github.com/void2610/tyranoscript-lsp
     'uiua_ls', ---:TODO validate  ---@source https://github.com/uiua-lang/uiua/
     'unison_ls', ---:TODO validate
     ---@source https://github.com/unisonweb/unison/blob/trunk/docs/language-server.markdown
