@@ -1,3 +1,8 @@
+---
+origin_lane: qompassai
+content_label: sfw
+---
+
 # 2026-10-13 — License normalized: Apache-2.0
 
 - Owner ordered estate-wide license normalization to Apache-2.0

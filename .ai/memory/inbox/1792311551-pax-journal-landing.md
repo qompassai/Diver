@@ -1,3 +1,8 @@
+---
+origin_lane: qompassai
+content_label: sfw
+---
+
 # Journal registry landing — 2026-10-18
 
 Owner ruled the landing on 2026-10-18; the journal authoring unit landed

@@ -1,3 +1,8 @@
+---
+origin_lane: qompassai
+content_label: sfw
+---
+
 # 2026-10-17 night — Diver fix bundle (Owner's rulings, T9)
 
 Four ruled items landed on main (commits d111c952, 10c07e35, 33af9808):

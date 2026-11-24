@@ -1,3 +1,8 @@
+---
+origin_lane: qompassai
+content_label: sfw
+---
+
 # awkfmt adapter landing (2026-10-18)
 
 Landed lua/formatters/awkfmt.lua + its CHANGELOG section from the live
