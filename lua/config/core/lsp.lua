@@ -292,6 +292,36 @@ local function setup_diagnostics()
     diagnostic.enable(true)
 end
 
+local function stop_clients_on_exit()
+    local clients = lsp.get_clients()
+
+    if #clients == 0 then
+        return
+    end
+
+    -- Give every client the orderly shutdown -> exit handshake with
+    -- a longer bounded wait than the runtime exit handler's short
+    -- exit_timeout: a server that treats a closed transport as fatal
+    -- dies noisily (slint-lsp 1.14.1 exits 3 with a disconnected-
+    -- channel error). Quit paths that skip VimLeavePre entirely
+    -- (startup-phase exits) get no handshake from anyone.
+    for _, client in ipairs(clients) do
+        client:stop()
+    end
+
+    local timeout_ms = bounded_integer(g.lsp_shutdown_wait_ms, 2000, 100, 10000)
+
+    vim.wait(timeout_ms, function()
+        for _, client in ipairs(clients) do
+            if not client:is_stopped() then
+                return false
+            end
+        end
+
+        return true
+    end, 20)
+end
+
 ---Check whether a client supports an LSP method for a buffer.
 ---
 ---Plain-language version: ask the language client "can you do this here?";
@@ -657,6 +687,14 @@ local function setup_autocmds()
         callback = highlight_mutable_token,
 
         desc = 'Optionally highlight mutable variables from semantic tokens',
+
+        group = GROUP.core,
+    })
+
+    api.nvim_create_autocmd('VimLeavePre', {
+        callback = stop_clients_on_exit,
+
+        desc = 'Stop LSP clients with the shutdown handshake before exit',
 
         group = GROUP.core,
     })
