@@ -1,6 +1,6 @@
 [package]
 name = "diver-mcp-server"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Diver's MCP server as a Rust rmcp sidecar: the seven-tool workspace surface (read_file, list_files, search_text, get_diagnostics, write_file, edit_file, run_command) behind the fail-closed policy gate ported from lua/ai/mcp/server/policy.lua. Modern protocol era only (2026-07-28)."
 license = "Apache-2.0"
